@@ -1,9 +1,9 @@
 defmodule ExPulp do
   @moduledoc """
-  ExPulp: A linear and mixed-integer programming modeler for Elixir.
+  ExPulp: Linear, mixed-integer, and quadratic programming for Elixir.
 
-  Provides a DSL for defining LP/MIP problems with natural arithmetic syntax,
-  and solves them using external solvers (CBC by default).
+  Provides a DSL for defining optimization problems with natural arithmetic syntax,
+  and solves them using external solvers (HiGHS by default, CBC also supported).
 
   ## Quick Start
 
@@ -101,7 +101,7 @@ defmodule ExPulp do
   end
 
   @doc """
-  Solves a problem using the specified solver (default: CBC).
+  Solves a problem using the specified solver.
 
   ## Options
     * `:solver` - solver module (default: `ExPulp.Solver.HiGHS`)

@@ -209,6 +209,11 @@ defmodule ExPulp.Problem do
     Enum.any?(Map.values(problem.variables), fn v -> v.category == :integer end)
   end
 
+  @doc "Returns true if the objective contains quadratic terms."
+  @spec quadratic?(t()) :: boolean()
+  def quadratic?(%__MODULE__{objective: nil}), do: false
+  def quadratic?(%__MODULE__{objective: obj}), do: Expression.quadratic?(obj)
+
   @doc """
   Returns the number of variables in the problem.
 

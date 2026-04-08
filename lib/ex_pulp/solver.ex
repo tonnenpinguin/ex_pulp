@@ -3,7 +3,7 @@ defmodule ExPulp.Solver do
   Behaviour for LP/MIP solvers.
 
   Implement this behaviour to add support for a new solver backend.
-  The default solver is `ExPulp.Solver.CBC`.
+  The default solver is `ExPulp.Solver.HiGHS`.
 
   ## Implementing a solver
 

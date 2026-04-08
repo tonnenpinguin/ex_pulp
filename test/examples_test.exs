@@ -95,4 +95,25 @@ defmodule ExamplesTest do
       assert grid |> Enum.at(0) |> Enum.at(4) == 7
     end
   end
+
+  describe "Portfolio optimization (QP)" do
+    test "finds minimum variance portfolio meeting return target" do
+      {:ok, result} = Examples.Portfolio.solve()
+      assert result.status == :optimal
+
+      # Weights sum to 1
+      total_weight = result.weights |> Map.values() |> Enum.sum()
+      assert_in_delta total_weight, 1.0, 1.0e-4
+
+      # Meets minimum return of 10%
+      assert result.return >= 0.10 - 1.0e-4
+
+      # Variance is positive and small
+      assert result.variance > 0
+      assert result.variance < 0.01
+
+      # All weights non-negative
+      assert Enum.all?(result.weights, fn {_k, v} -> v >= -1.0e-6 end)
+    end
+  end
 end

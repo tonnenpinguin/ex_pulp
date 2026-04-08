@@ -123,12 +123,21 @@ defmodule ExPulp.ExpressionTest do
     assert result.terms[x] == 5
   end
 
-  test "multiply/2 raises on non-linear", %{x: x, y: y} do
+  test "multiply/2 produces quadratic terms", %{x: x, y: y} do
     a = Expression.new([{x, 1}])
     b = Expression.new([{y, 1}])
+    result = Expression.multiply(a, b)
 
-    assert_raise ArgumentError, ~r/non-linear/, fn ->
-      Expression.multiply(a, b)
+    assert Expression.quadratic?(result)
+    assert Expression.to_string(result) == "x*y"
+  end
+
+  test "multiply/2 raises on cubic (quadratic * linear)", %{x: x, y: y} do
+    quad = Expression.multiply(x, x)
+    linear = Expression.from_variable(y)
+
+    assert_raise ArgumentError, ~r/cubic/, fn ->
+      Expression.multiply(quad, linear)
     end
   end
 

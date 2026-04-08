@@ -3,7 +3,7 @@
 [![Hex.pm](https://img.shields.io/hexpm/v/ex_pulp.svg)](https://hex.pm/packages/ex_pulp)
 [![HexDocs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/ex_pulp)
 
-Linear and mixed-integer programming for Elixir, inspired by
+Linear, mixed-integer, and quadratic programming for Elixir, inspired by
 Python's [PuLP](https://github.com/coin-or/PuLP).
 
 Define optimization problems using natural arithmetic — `2 * x + 3 * y >= 5`
@@ -30,15 +30,17 @@ end
 
 ## Prerequisites
 
-ExPulp solves problems via the [CBC](https://github.com/coin-or/Cbc) solver,
-which must be installed and on your `PATH`:
+ExPulp requires [HiGHS](https://highs.dev) (default) or [CBC](https://github.com/coin-or/Cbc)
+on your `PATH`. HiGHS supports LP, MIP, and QP. CBC supports LP and MIP.
 
 ```bash
 # macOS
-brew install cbc
+brew install highs    # recommended
+brew install cbc      # alternative
 
 # Ubuntu/Debian
 apt-get install coinor-cbc
+# HiGHS: download from https://github.com/ERGO-Code/HiGHS/releases
 ```
 
 ## Installation
@@ -51,12 +53,12 @@ def deps do
 end
 ```
 
-## What It Looks Like
+## Examples
 
 ### Diet optimization (LP)
 
 Find the cheapest blend of ingredients that meets nutritional requirements.
-See the full source in [`Examples.Whiskas`](examples/whiskas.ex).
+See [`Examples.Whiskas`](examples/whiskas.ex).
 
 ```elixir
 {problem, vars} = ExPulp.model "whiskas", :minimize do
@@ -110,6 +112,24 @@ See [`Examples.Transportation`](examples/transportation.ex).
 end
 ```
 
+### Portfolio optimization (QP)
+
+Minimize portfolio variance subject to a target return.
+See [`Examples.Portfolio`](examples/portfolio.ex).
+
+```elixir
+{problem, vars} = ExPulp.model "portfolio", :minimize do
+  w = lp_vars("w", assets, low: 0, high: 1)
+
+  minimize lp_sum(for i <- assets, j <- assets, do: cov[{i, j}] * w[i] * w[j])
+
+  subject_to "invested", lp_sum(for i <- assets, do: w[i]) == 1
+  subject_to "return",   lp_weighted_sum(returns, w) >= 0.10
+
+  %{w: w}
+end
+```
+
 ### Sudoku (constraint satisfaction)
 
 Model a 9x9 Sudoku as a binary integer program.
@@ -138,8 +158,8 @@ Inside an `ExPulp.model` block:
 | `lp_weighted_sum(coeff_map, var_map)` | Weighted sum |
 | `lp_dot(coeff_list, var_list)` | Dot product |
 
-`minimize`, `subject_to`, `add_to_objective`, and `for_each` work at any nesting
-depth — inside `for` loops, `if` blocks, comprehensions, etc.
+All DSL forms work at any nesting depth — inside `for` loops, `if` blocks,
+comprehensions, and function calls.
 
 End the block with a map or tuple to return variable references alongside the problem:
 
@@ -152,7 +172,7 @@ End the block with a map or tuple to return variable references alongside the pr
 end
 ```
 
-A functional (non-DSL) API is also available — see [`ExPulp.Problem`](lib/ex_pulp/problem.ex) in the docs.
+A pipe-based functional API is also available — see `ExPulp.Problem` in the docs.
 
 ## License
 

@@ -2,8 +2,8 @@ defmodule ExPulp.Solver.CBC do
   @moduledoc """
   CBC (COIN-OR Branch and Cut) solver integration.
 
-  This is the default solver for ExPulp. It writes the problem to a CPLEX LP file,
-  invokes the `cbc` command-line binary, and parses the solution file.
+  Writes the problem to a CPLEX LP file, invokes the `cbc` command-line binary,
+  and parses the solution file. Supports LP and MIP (not QP).
 
   ## Prerequisites
 
@@ -47,10 +47,15 @@ defmodule ExPulp.Solver.CBC do
     time_limit = Keyword.get(opts, :time_limit)
     keep_files = Keyword.get(opts, :keep_files, false)
 
-    unless System.find_executable(path) do
-      {:error, {:solver_not_found, path}}
-    else
-      do_solve(problem, path, time_limit, keep_files)
+    cond do
+      Problem.quadratic?(problem) ->
+        {:error, :quadratic_not_supported}
+
+      !System.find_executable(path) ->
+        {:error, {:solver_not_found, path}}
+
+      true ->
+        do_solve(problem, path, time_limit, keep_files)
     end
   end
 

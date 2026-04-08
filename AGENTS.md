@@ -106,6 +106,23 @@ n = var(low: 0, high: 100, category: :integer)
 b = var(category: :binary)               # integer with [0, 1] bounds
 ```
 
+## Quadratic Objectives (QP)
+
+Quadratic objectives are supported via HiGHS (not CBC):
+
+```elixir
+# x * y and x * x produce quadratic terms inside model blocks
+minimize x * x + x * y + y * y + x + 3
+
+# Distributes naturally
+minimize (x + y) * (x + y)  # => x^2 + 2*x*y + y^2
+
+# Portfolio variance: w' * Cov * w
+minimize lp_sum(for i <- assets, j <- assets, do: cov[{i, j}] * w[i] * w[j])
+```
+
+CBC will return `{:error, :quadratic_not_supported}` for quadratic problems.
+
 ## Common Mistakes
 
 1. **Forgetting `require ExPulp`** — the `model` macro needs it

@@ -53,7 +53,53 @@ defmodule ExPulp.LpFormat do
   defp write_objective(%Problem{objective: nil}), do: "OBJ: 0\n"
 
   defp write_objective(%Problem{objective: expr}) do
-    "#{format_expression(expr, "OBJ")}\n"
+    linear_part = format_expression(expr, "OBJ")
+
+    if Expression.quadratic?(expr) do
+      quad_part = format_quad_objective(expr.quad_terms)
+      "#{linear_part} + #{quad_part}\n"
+    else
+      "#{linear_part}\n"
+    end
+  end
+
+  defp format_quad_objective(quad_terms) do
+    sorted =
+      quad_terms
+      |> Enum.sort_by(fn {{va, vb}, _} ->
+        if va.name == vb.name, do: {0, va.name, va.name}, else: {1, va.name, vb.name}
+      end)
+
+    terms =
+      sorted
+      |> Enum.with_index()
+      |> Enum.map(fn {{{va, vb}, coeff}, idx} ->
+        # Double the coefficient (CPLEX LP convention: [ ... ] / 2)
+        doubled = Kernel.*(coeff, 2)
+        abs_doubled = abs(doubled)
+
+        label =
+          if va.name == vb.name,
+            do: "#{va.name} ^2",
+            else: "#{va.name} * #{vb.name}"
+
+        coeff_str =
+          cond do
+            abs_doubled == trunc(abs_doubled) -> "#{trunc(abs_doubled)} #{label}"
+            true -> "#{format_number(abs_doubled)} #{label}"
+          end
+
+        cond do
+          doubled > 0 && idx == 0 -> coeff_str
+          doubled > 0 -> " + #{coeff_str}"
+          doubled < 0 && idx == 0 -> "-#{coeff_str}"
+          doubled < 0 -> " - #{coeff_str}"
+          true -> ""
+        end
+      end)
+      |> Enum.join("")
+
+    "[ #{terms} ] / 2"
   end
 
   defp write_constraints(%Problem{constraints: []}), do: nil
@@ -99,10 +145,11 @@ defmodule ExPulp.LpFormat do
   end
 
   defp format_expression(%Expression{} = expr, label) do
-    sorted_vars = Expression.sorted_variables(expr)
+    # Only linear terms here — quadratic section is handled in write_objective
+    linear_vars = expr.terms |> Map.keys() |> Enum.sort_by(& &1.name)
 
     terms =
-      sorted_vars
+      linear_vars
       |> Enum.with_index()
       |> Enum.map(fn {var, idx} ->
         coeff = Map.fetch!(expr.terms, var)
@@ -116,10 +163,10 @@ defmodule ExPulp.LpFormat do
   end
 
   defp format_constraint(name, %Constraint{} = c) do
-    sorted_vars = Expression.sorted_variables(c.expression)
+    linear_vars = c.expression.terms |> Map.keys() |> Enum.sort_by(& &1.name)
 
     terms =
-      sorted_vars
+      linear_vars
       |> Enum.with_index()
       |> Enum.map(fn {var, idx} ->
         coeff = Map.fetch!(c.expression.terms, var)
