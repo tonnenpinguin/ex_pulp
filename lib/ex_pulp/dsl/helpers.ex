@@ -2,34 +2,32 @@ defmodule ExPulp.DSL.Helpers do
   @moduledoc """
   Helper functions available inside `ExPulp.model/3` blocks.
 
-  Inside a `model` block, these functions are automatically imported and can
-  be called directly:
+  These functions are automatically imported within a `model` block:
 
       ExPulp.model "example", :minimize do
         x = var(low: 0, high: 10)
-        items = lp_vars("item", 1..5, low: 0)
-        flags = lp_binary_vars("flag", [:a, :b, :c])
+        costs = %{1 => 3.0, 2 => 5.0, 3 => 1.0}
+        items = lp_vars("item", 1..3, low: 0)
 
-        minimize lp_sum(for i <- 1..5, do: items[i])
-        subject_to lp_dot([1, 2, 3, 4, 5], Map.values(items) |> Enum.sort_by(&(&1.name))) >= 10
+        minimize lp_weighted_sum(costs, items)
+        subject_to "budget", lp_sum(for i <- 1..3, do: items[i]) <= 100
       end
 
-  These functions also work outside of `model` blocks when called directly
-  with explicit arguments, which is useful for programmatic model building.
+  They also work outside `model` blocks when called with their full module path.
   """
 
   alias ExPulp.{Variable, Expression}
 
   @doc """
-  Creates a new variable. Shorthand for `Variable.new/2`.
+  Creates a new variable.
 
   Inside a `model` block, the variable name is automatically deduced from
-  the assignment target (e.g., `x = var(low: 0)` creates a variable named `"x"`).
+  the assignment target — `x = var(low: 0)` creates a variable named `"x"`.
   When called directly, the name must be provided as the first argument.
 
   ## Options
-    * `:low` - lower bound (default: nil)
-    * `:high` - upper bound (default: nil)
+    * `:low` - lower bound (default: `nil`, unbounded)
+    * `:high` - upper bound (default: `nil`, unbounded)
     * `:category` - `:continuous` (default), `:integer`, or `:binary`
 
   ## Examples
@@ -53,27 +51,12 @@ defmodule ExPulp.DSL.Helpers do
 
   @doc """
   Creates a map of indexed variables.
+  Equivalent to PuLP's `LpVariable.dicts`.
 
-  Equivalent to PuLP's `LpVariable.dicts()`. Returns `%{key => %Variable{}}`.
+  Returns `%{key => %Variable{}}` where each variable is named
+  `"prefix_key"`.
 
   ## Single dimension
-
-      vars = lp_vars("x", 1..5, low: 0)
-      # => %{1 => #Variable<0 <= x_1>, 2 => #Variable<0 <= x_2>, ...}
-
-      vars = lp_vars("item", ["chicken", "beef"], low: 0)
-      # => %{"chicken" => #Variable<0 <= item_chicken>, ...}
-
-  ## Multiple dimensions
-
-  Pass a list of enumerables to create variables indexed by tuples:
-
-      vars = lp_vars("flow", [[:a, :b], 1..3], low: 0)
-      # => %{{:a, 1} => #Variable<0 <= flow_a_1>, {:a, 2} => ..., {:b, 3} => ...}
-
-      vars[{:a, 2}]  # => #Variable<0 <= flow_a_2>
-
-  ## Examples
 
       iex> vars = ExPulp.DSL.Helpers.lp_vars("x", 1..3, low: 0)
       iex> map_size(vars)
@@ -85,11 +68,19 @@ defmodule ExPulp.DSL.Helpers do
       iex> Map.keys(vars) |> Enum.sort()
       ["a", "b"]
 
+  ## Multiple dimensions
+
+  Pass a list of enumerables to create variables indexed by tuples.
+  Ranges, lists, and any enumerable can be mixed:
+
       iex> vars = ExPulp.DSL.Helpers.lp_vars("flow", [[:a, :b], 1..2], low: 0)
       iex> map_size(vars)
       4
       iex> vars[{:a, 1}].name
       "flow_a_1"
+
+  Index values are converted to name segments automatically — atoms, strings,
+  integers, floats, and `DateTime` (as unix timestamp) are all supported.
   """
   @spec lp_vars(String.t(), Enumerable.t() | [Enumerable.t()], keyword()) ::
           %{any() => Variable.t()}
@@ -101,14 +92,14 @@ defmodule ExPulp.DSL.Helpers do
     indices
     |> cartesian_product()
     |> Enum.into(%{}, fn key_tuple ->
-      name_suffix = key_tuple |> Tuple.to_list() |> Enum.join("_")
+      name_suffix = key_tuple |> Tuple.to_list() |> Enum.map_join("_", &to_name/1)
       {key_tuple, Variable.new("#{prefix}_#{name_suffix}", clean_opts)}
     end)
   end
 
   def lp_vars(prefix, indices, opts) do
     for i <- indices, into: %{} do
-      {i, Variable.new("#{prefix}_#{i}", Keyword.delete(opts, :name))}
+      {i, Variable.new("#{prefix}_#{to_name(i)}", Keyword.delete(opts, :name))}
     end
   end
 
@@ -122,11 +113,21 @@ defmodule ExPulp.DSL.Helpers do
     end
   end
 
+  defp to_name(value) when is_binary(value), do: value
+  defp to_name(value) when is_atom(value), do: Atom.to_string(value)
+  defp to_name(value) when is_integer(value), do: Integer.to_string(value)
+  defp to_name(value) when is_float(value), do: Float.to_string(value)
+
+  defp to_name(value) when is_tuple(value),
+    do: value |> Tuple.to_list() |> Enum.map_join("_", &to_name/1)
+
+  defp to_name(%DateTime{} = dt), do: dt |> DateTime.to_unix() |> Integer.to_string()
+  defp to_name(value), do: inspect(value)
+
   @doc """
-  Creates a map of indexed binary variables.
+  Creates a map of indexed binary (0/1) variables.
 
   Shorthand for `lp_vars(prefix, indices, category: :binary)`.
-  Each variable is integer-typed with bounds `[0, 1]`.
 
   ## Examples
 
@@ -148,7 +149,8 @@ defmodule ExPulp.DSL.Helpers do
   @doc """
   Creates a map of indexed integer variables.
 
-  Shorthand for `lp_vars(prefix, indices, category: :integer)` with additional options.
+  Shorthand for `lp_vars(prefix, indices, category: :integer)`.
+  Accepts the same options as `lp_vars/3`.
 
   ## Examples
 
@@ -197,18 +199,13 @@ defmodule ExPulp.DSL.Helpers do
   end
 
   @doc """
-  Computes the weighted sum of a coefficients map and a variables map.
+  Computes the weighted sum of two maps with matching keys.
 
   For every key present in **both** maps, multiplies the coefficient by the
   variable and sums the results. Keys present in only one map are ignored.
 
-  This is the most common pattern in LP modeling — it turns this:
-
-      lp_sum(for i <- ingredients, do: protein[i] * vars[i])
-
-  into:
-
-      lp_weighted_sum(protein, vars)
+      lp_weighted_sum(costs, vars)
+      # equivalent to: lp_sum(for {k, c} <- costs, Map.has_key?(vars, k), do: c * vars[k])
 
   ## Examples
 
@@ -242,10 +239,11 @@ defmodule ExPulp.DSL.Helpers do
   end
 
   @doc """
-  Computes the dot product of a list of coefficients and a list of variables.
+  Computes the dot product of two lists — coefficients and variables.
   Equivalent to PuLP's `lpDot`.
 
-      lp_dot([0.013, 0.008], [x, y])
+  The lists must be the same length. Each coefficient is paired with the
+  corresponding variable by position.
 
   ## Examples
 

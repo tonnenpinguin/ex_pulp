@@ -1,6 +1,7 @@
 # ExPulp
 
-Linear and mixed-integer programming for Elixir.
+Linear and mixed-integer programming for Elixir, inspired by
+Python's [PuLP](https://github.com/coin-or/PuLP).
 
 Define optimization problems using natural arithmetic — `2 * x + 3 * y >= 5`
 builds constraints directly from Elixir operators.
