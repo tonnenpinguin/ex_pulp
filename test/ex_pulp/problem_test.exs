@@ -57,7 +57,7 @@ defmodule ExPulp.ProblemTest do
       |> Problem.add_constraint(c1)
       |> Problem.add_constraint(c2)
 
-    assert [{"_C1", _}, {"_C2", _}] = p.constraints
+    assert [{"_C1", _}, {"_C2", _}] = Problem.constraints_ordered(p)
   end
 
   test "variables_sorted/1 returns sorted", %{x: x, y: y} do

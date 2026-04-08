@@ -106,6 +106,12 @@ defmodule ExPulp.Constraint do
   @spec eq(Expression.t() | Variable.t(), number() | Expression.t() | Variable.t()) :: t()
   def eq(left, right), do: make_constraint(left, :eq, right)
 
+  defp make_constraint(left, _sense, right) when is_number(left) and is_number(right) do
+    raise ArgumentError,
+          "cannot create a constraint between two numbers (#{left} and #{right}) — " <>
+            "at least one side must be a variable or expression"
+  end
+
   defp make_constraint(left, sense, right) when is_number(right) do
     %__MODULE__{expression: Expression.wrap(left), sense: sense, rhs: right / 1}
   end

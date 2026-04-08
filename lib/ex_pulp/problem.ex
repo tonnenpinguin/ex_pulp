@@ -62,13 +62,18 @@ defmodule ExPulp.Problem do
   @doc """
   Creates a new problem with the given name and optimization sense.
 
-  Spaces in the name are replaced with underscores to produce valid LP file names.
+  Illegal characters (same as variable names: `-`, `+`, `[`, `]`, ` `, `>`, `/`)
+  are replaced with underscores to produce valid LP file names.
 
   ## Examples
 
       iex> problem = ExPulp.Problem.new("my problem")
       iex> problem.name
       "my_problem"
+
+      iex> problem = ExPulp.Problem.new("my-problem[1]")
+      iex> problem.name
+      "my_problem_1_"
 
       iex> problem = ExPulp.Problem.new("test", :maximize)
       iex> problem.sense
@@ -80,8 +85,7 @@ defmodule ExPulp.Problem do
   """
   @spec new(String.t(), sense()) :: t()
   def new(name, sense \\ :minimize) when sense in [:minimize, :maximize] do
-    sanitized = String.replace(name, " ", "_")
-    %__MODULE__{name: sanitized, sense: sense}
+    %__MODULE__{name: Variable.sanitize_name(name), sense: sense}
   end
 
   @doc """
@@ -166,7 +170,18 @@ defmodule ExPulp.Problem do
       end
 
     problem = register_expression_variables(problem, constraint.expression)
-    %{problem | constraints: problem.constraints ++ [{name, constraint}]}
+    %{problem | constraints: [{name, constraint} | problem.constraints]}
+  end
+
+  @doc """
+  Returns the constraints in insertion order.
+
+  Constraints are stored in reverse order internally for O(1) insertion.
+  Use this function when order matters (e.g., serialization).
+  """
+  @spec constraints_ordered(t()) :: [{String.t(), Constraint.t()}]
+  def constraints_ordered(%__MODULE__{} = problem) do
+    Enum.reverse(problem.constraints)
   end
 
   # --- Query API ---
@@ -295,7 +310,7 @@ defmodule ExPulp.Problem do
   """
   @spec constraint_names(t()) :: [String.t()]
   def constraint_names(%__MODULE__{} = problem) do
-    Enum.map(problem.constraints, fn {name, _} -> name end)
+    problem |> constraints_ordered() |> Enum.map(fn {name, _} -> name end)
   end
 
   # --- Validation ---

@@ -188,7 +188,7 @@ defmodule ExPulp.Solver.HiGHS do
 
     cond do
       model_lower == "optimal" -> {:optimal, :optimal}
-      sol_lower == "feasible" -> {:optimal, :feasible}
+      sol_lower == "feasible" -> {:feasible, :feasible}
       model_lower == "infeasible" -> {:infeasible, :infeasible}
       model_lower == "unbounded" -> {:unbounded, :unbounded}
       true -> {:not_solved, :not_solved}
@@ -203,7 +203,7 @@ defmodule ExPulp.Solver.HiGHS do
     file_status = parse_solution_model_status(lines, status)
 
     variables =
-      if file_status in [:optimal] do
+      if file_status in [:optimal, :feasible] do
         parse_column_values(lines, problem)
       else
         %{}
@@ -213,7 +213,7 @@ defmodule ExPulp.Solver.HiGHS do
 
     %Result{
       status: file_status,
-      objective: if(file_status == :optimal, do: objective, else: nil),
+      objective: if(file_status in [:optimal, :feasible], do: objective, else: nil),
       variables: variables
     }
   end
@@ -224,6 +224,7 @@ defmodule ExPulp.Solver.HiGHS do
       "Optimal" -> :optimal
       "Infeasible" -> :infeasible
       "Unbounded" -> :unbounded
+      "Feasible" -> :feasible
       _ -> fallback
     end
   end

@@ -97,9 +97,14 @@ defmodule ExPulp.DSL do
 
          ExPulp.DSL.init_builder(unquote(name), unquote(sense))
 
-         expulp_last_expr = unquote(transformed)
-
-         ExPulp.DSL.finish_builder(expulp_last_expr)
+         try do
+           expulp_last_expr = unquote(transformed)
+           ExPulp.DSL.finish_builder(expulp_last_expr)
+         rescue
+           e ->
+             ExPulp.DSL.cleanup_builder()
+             reraise e, __STACKTRACE__
+         end
        end).()
     end
   end
@@ -125,6 +130,12 @@ defmodule ExPulp.DSL do
       data when is_tuple(data) -> {problem, data}
       _ -> problem
     end
+  end
+
+  @doc false
+  def cleanup_builder do
+    Process.delete(@builder_key)
+    :ok
   end
 
   defp update_builder(fun) do

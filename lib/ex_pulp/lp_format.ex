@@ -104,9 +104,11 @@ defmodule ExPulp.LpFormat do
 
   defp write_constraints(%Problem{constraints: []}), do: nil
 
-  defp write_constraints(%Problem{constraints: constraints}) do
+  defp write_constraints(%Problem{} = problem) do
     lines =
-      Enum.map(constraints, fn {name, constraint} ->
+      problem
+      |> Problem.constraints_ordered()
+      |> Enum.map(fn {name, constraint} ->
         format_constraint(name, constraint)
       end)
 

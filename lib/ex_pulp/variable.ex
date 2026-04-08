@@ -24,7 +24,7 @@ defmodule ExPulp.Variable do
 
   ## Name sanitization
 
-  Illegal characters (`-`, `+`, `[`, `]`, ` `, `-`, `>`, `/`) are replaced
+  Illegal characters (`-`, `+`, `[`, `]`, ` `, `>`, `/`) are replaced
   with underscores to produce LP-format-safe names:
 
       iex> v = ExPulp.Variable.new("my-var/test")
@@ -162,7 +162,8 @@ defmodule ExPulp.Variable do
   def default_positive?(%__MODULE__{low: 0, high: nil, category: :continuous}), do: true
   def default_positive?(%__MODULE__{}), do: false
 
-  defp sanitize_name(name) do
+  @doc false
+  def sanitize_name(name) do
     name
     |> String.to_charlist()
     |> Enum.map(fn c -> if c in @illegal_chars, do: @replacement, else: c end)

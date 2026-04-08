@@ -140,7 +140,7 @@ defmodule ExPulp.Solver.CBC do
     variables = Util.round_integer_variables(variables, problem.variables)
 
     objective =
-      if problem.objective && status == :optimal do
+      if problem.objective && status in [:optimal, :feasible] do
         parse_objective_from_status(status_line)
       else
         nil
@@ -149,7 +149,7 @@ defmodule ExPulp.Solver.CBC do
     %Result{
       status: status,
       objective: objective,
-      variables: if(status in [:optimal], do: variables, else: %{})
+      variables: if(status in [:optimal, :feasible], do: variables, else: %{})
     }
   end
 
@@ -164,13 +164,13 @@ defmodule ExPulp.Solver.CBC do
         :infeasible
 
       "Integer" ->
-        :infeasible
+        if "infeasible" in words, do: :infeasible, else: :optimal
 
       "Unbounded" ->
         :unbounded
 
       "Stopped" ->
-        if "objective" in words, do: :optimal, else: :not_solved
+        if "objective" in words, do: :feasible, else: :not_solved
 
       _ ->
         :not_solved

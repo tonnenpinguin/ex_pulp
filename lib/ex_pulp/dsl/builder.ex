@@ -1,12 +1,5 @@
 defmodule ExPulp.DSL.Builder do
-  @moduledoc """
-  Accumulator used internally by the DSL macro to collect objective and
-  constraints during model block evaluation.
-
-  This module is not part of the public API. It is used by `ExPulp.DSL`
-  to build up a problem definition which is then converted to a
-  `%ExPulp.Problem{}` via `to_problem/1`.
-  """
+  @moduledoc false
 
   alias ExPulp.{Expression, Variable, Constraint, Problem}
 

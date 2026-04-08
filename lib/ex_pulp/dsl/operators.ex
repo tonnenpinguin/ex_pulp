@@ -30,40 +30,36 @@ defmodule ExPulp.DSL.Operators do
 
   import Kernel, except: [+: 2, -: 2, *: 2, /: 2, >=: 2, <=: 2, ==: 2, -: 1]
 
-  # --- Addition ---
-
+  @doc false
   def a + b when is_number(a) and is_number(b), do: Kernel.+(a, b)
   def a + b, do: Expression.add(a, b)
 
-  # --- Subtraction ---
-
+  @doc false
   def a - b when is_number(a) and is_number(b), do: Kernel.-(a, b)
   def a - b, do: Expression.subtract(a, b)
 
-  # --- Unary minus ---
-
+  @doc false
   def -a when is_number(a), do: Kernel.-(a)
   def -(%Variable{} = a), do: Expression.negate(Expression.from_variable(a))
   def -(%Expression{} = a), do: Expression.negate(a)
 
-  # --- Multiplication ---
-
+  @doc false
   def a * b when is_number(a) and is_number(b), do: Kernel.*(a, b)
   def a * b, do: Expression.multiply(a, b)
 
-  # --- Division ---
-
+  @doc false
   def a / b when is_number(a) and is_number(b), do: Kernel./(a, b)
   def a / b when is_number(b), do: Expression.divide(a, b)
 
-  # --- Comparison operators (produce Constraints) ---
-
+  @doc false
   def a >= b when is_number(a) and is_number(b), do: Kernel.>=(a, b)
   def a >= b, do: Constraint.geq(a, b)
 
+  @doc false
   def a <= b when is_number(a) and is_number(b), do: Kernel.<=(a, b)
   def a <= b, do: Constraint.leq(a, b)
 
+  @doc false
   def a == b when is_number(a) and is_number(b), do: Kernel.==(a, b)
   def a == b, do: Constraint.eq(a, b)
 end

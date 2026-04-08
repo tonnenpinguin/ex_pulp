@@ -9,6 +9,8 @@ defmodule ExPulp.Result do
   ## Statuses
 
     * `:optimal` - an optimal solution was found
+    * `:feasible` - a feasible solution was found but optimality was not proven
+      (e.g., solver hit a time limit with an incumbent solution)
     * `:infeasible` - no feasible solution exists
     * `:unbounded` - the objective is unbounded
     * `:not_solved` - the problem has not been solved yet
@@ -36,7 +38,7 @@ defmodule ExPulp.Result do
       ExPulp.Result.num_variables(result) #=> 2
   """
 
-  @type status :: :optimal | :infeasible | :unbounded | :not_solved
+  @type status :: :optimal | :feasible | :infeasible | :unbounded | :not_solved
 
   @type t :: %__MODULE__{
           status: status(),
@@ -65,11 +67,15 @@ defmodule ExPulp.Result do
   def optimal?(%__MODULE__{}), do: false
 
   @doc """
-  Returns true if a feasible solution was found (optimal counts as feasible).
+  Returns true if a feasible solution was found (both `:optimal` and `:feasible`
+  count as feasible).
 
   ## Examples
 
       iex> ExPulp.Result.feasible?(%ExPulp.Result{status: :optimal, objective: 5.0, variables: %{}})
+      true
+
+      iex> ExPulp.Result.feasible?(%ExPulp.Result{status: :feasible, objective: 5.0, variables: %{}})
       true
 
       iex> ExPulp.Result.feasible?(%ExPulp.Result{status: :infeasible})
@@ -80,6 +86,7 @@ defmodule ExPulp.Result do
   """
   @spec feasible?(t()) :: boolean()
   def feasible?(%__MODULE__{status: :optimal}), do: true
+  def feasible?(%__MODULE__{status: :feasible}), do: true
   def feasible?(%__MODULE__{}), do: false
 
   @doc """

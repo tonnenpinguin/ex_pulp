@@ -22,7 +22,7 @@ problem = ExPulp.model "name", :minimize do  # or :maximize
 end
 
 {:ok, result} = ExPulp.solve(problem)
-result.status     # :optimal | :infeasible | :unbounded | :not_solved
+result.status     # :optimal | :feasible | :infeasible | :unbounded | :not_solved
 result.objective  # float
 result.variables  # %{"x" => 5.0, "y" => 0.0}
 ```
@@ -95,7 +95,7 @@ for_each items, "cap", fn i -> vars[i] <= capacity[i] end
 lp_sum(for i <- items, do: vars[i])                # sum
 lp_sum(for i <- items, do: cost[i] * vars[i])      # weighted sum via comprehension
 lp_weighted_sum(cost_map, var_map)                  # weighted sum from two maps (same keys)
-lp_dot([1, 2, 3], [x, y, z])                       # dot product from two lists
+lp_dot([1, 2, 3], [x, y, z])                       # dot product (lists must be equal length)
 ```
 
 ## Variable Categories

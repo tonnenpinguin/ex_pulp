@@ -23,3 +23,6 @@ ex_pulp-*.tar
 /tmp/
 
 *.log
+
+# Editor/tool directories
+/.elixir_ls/

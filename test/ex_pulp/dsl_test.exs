@@ -149,7 +149,7 @@ defmodule ExPulp.DSLTest do
         subject_to x <= 10
       end
 
-    assert [{"_C1", _}, {"_C2", _}] = problem.constraints
+    assert [{"_C1", _}, {"_C2", _}] = ExPulp.Problem.constraints_ordered(problem)
   end
 
   test "maximize sense" do

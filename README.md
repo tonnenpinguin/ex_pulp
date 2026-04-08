@@ -48,7 +48,7 @@ apt-get install coinor-cbc
 ```elixir
 def deps do
   [
-    {:ex_pulp, "~> 0.1.0"}
+    {:ex_pulp, "~> 0.2"}
   ]
 end
 ```
@@ -153,7 +153,7 @@ Inside an `ExPulp.model` block:
 | `add_to_objective expr` | Add to objective incrementally |
 | `subject_to constraint` | Add constraint |
 | `subject_to "name", constraint` | Add named constraint |
-| `for_each enum, "prefix", fn -> constraint end` | Indexed constraints |
+| `for_each enum, "prefix", fn item -> constraint end` | Indexed constraints |
 | `lp_sum(list)` | Sum expressions |
 | `lp_weighted_sum(coeff_map, var_map)` | Weighted sum |
 | `lp_dot(coeff_list, var_list)` | Dot product |

@@ -12,7 +12,7 @@ defmodule ExPulp do
         x = var(low: 0, high: 10)
         y = var(low: 0, high: 10)
 
-        minimize x + y
+        minimize 2 * x + 3 * y
         subject_to "lower_bound", x + y >= 5
       end
 
@@ -21,8 +21,8 @@ defmodule ExPulp do
 
       # 3. Read results
       result.status     #=> :optimal
-      result.objective  #=> 5.0
-      ExPulp.value(result, "x")  #=> 0.0
+      result.objective  #=> 10.0
+      ExPulp.value(result, "x")  #=> 5.0
 
   ## Example
 
@@ -30,14 +30,14 @@ defmodule ExPulp do
         x = var(low: 0, high: 10)
         y = var(low: 0, high: 10)
 
-        minimize x + y
+        minimize 2 * x + 3 * y
         subject_to "lower_bound", x + y >= 5
       end
 
       {:ok, result} = ExPulp.solve(problem)
       result.status     #=> :optimal
-      result.objective  #=> 5.0
-      result.variables  #=> %{"x" => 0.0, "y" => 5.0}
+      result.objective  #=> 10.0
+      result.variables  #=> %{"x" => 5.0, "y" => 0.0}
 
   ## Returning variable references
 
@@ -144,11 +144,5 @@ defmodule ExPulp do
       3.0
   """
   @spec value(Result.t(), ExPulp.Variable.t() | String.t()) :: float() | nil
-  def value(%Result{} = result, %ExPulp.Variable{name: name}) do
-    Map.get(result.variables, name)
-  end
-
-  def value(%Result{} = result, name) when is_binary(name) do
-    Map.get(result.variables, name)
-  end
+  defdelegate value(result, var_or_name), to: Result, as: :get_variable
 end

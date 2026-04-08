@@ -266,6 +266,12 @@ defmodule ExPulp.DSL.Helpers do
   """
   @spec lp_dot([number()], [Variable.t()]) :: Expression.t()
   def lp_dot(coefficients, variables) when is_list(coefficients) and is_list(variables) do
+    if length(coefficients) != length(variables) do
+      raise ArgumentError,
+            "lp_dot/2 requires lists of equal length, " <>
+              "got #{length(coefficients)} coefficients and #{length(variables)} variables"
+    end
+
     coefficients
     |> Enum.zip(variables)
     |> Enum.map(fn {coeff, var} -> Expression.from_variable(var, coeff) end)
