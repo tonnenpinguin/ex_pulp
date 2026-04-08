@@ -41,7 +41,7 @@ defmodule ExPulp.DSL.Builder do
 
   @spec add_constraint(t(), Constraint.t(), String.t() | nil) :: t()
   def add_constraint(%__MODULE__{} = builder, %Constraint{} = constraint, name \\ nil) do
-    %{builder | constraints: builder.constraints ++ [{name, constraint}]}
+    %{builder | constraints: [{name, constraint} | builder.constraints]}
   end
 
   @spec to_problem(t()) :: Problem.t()
@@ -55,7 +55,9 @@ defmodule ExPulp.DSL.Builder do
         problem
       end
 
-    Enum.reduce(builder.constraints, problem, fn {name, constraint}, prob ->
+    builder.constraints
+    |> Enum.reverse()
+    |> Enum.reduce(problem, fn {name, constraint}, prob ->
       Problem.add_constraint(prob, constraint, name)
     end)
   end

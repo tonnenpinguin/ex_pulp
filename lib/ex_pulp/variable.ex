@@ -99,6 +99,12 @@ defmodule ExPulp.Variable do
   @spec new(String.t(), keyword()) :: t()
   def new(name, opts \\ []) when is_binary(name) do
     category = Keyword.get(opts, :category, :continuous)
+
+    unless category in [:continuous, :integer, :binary] do
+      raise ArgumentError,
+            "invalid category #{inspect(category)}, expected :continuous, :integer, or :binary"
+    end
+
     low = Keyword.get(opts, :low)
     high = Keyword.get(opts, :high)
 

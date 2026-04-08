@@ -322,7 +322,11 @@ defmodule ExPulp.Expression do
       "0.5*x"
   """
   @spec divide(t() | Variable.t(), number()) :: t()
-  def divide(expr, n) when is_number(n) and n != 0 do
+  def divide(_expr, n) when is_number(n) and n == 0 do
+    raise ArgumentError, "cannot divide expression by zero"
+  end
+
+  def divide(expr, n) when is_number(n) do
     scale(wrap(expr), Kernel./(1, n))
   end
 

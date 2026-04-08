@@ -108,6 +108,10 @@ defmodule ExPulp.DSL do
 
   @doc false
   def init_builder(name, sense) do
+    if Process.get(@builder_key) do
+      raise "ExPulp.model blocks cannot be nested"
+    end
+
     Process.put(@builder_key, ExPulp.DSL.Builder.new(name, sense))
   end
 
@@ -133,14 +137,26 @@ defmodule ExPulp.DSL do
   Sets the objective function. Can be called from any nesting depth inside a `model` block.
   """
   def minimize(expr) do
-    update_builder(&ExPulp.DSL.Builder.set_objective(&1, expr))
+    update_builder(fn builder ->
+      if builder.sense != :minimize do
+        raise ArgumentError, "called minimize/1 inside a :maximize model — use maximize/1"
+      end
+
+      ExPulp.DSL.Builder.set_objective(builder, expr)
+    end)
   end
 
   @doc """
   Sets the objective function. Can be called from any nesting depth inside a `model` block.
   """
   def maximize(expr) do
-    update_builder(&ExPulp.DSL.Builder.set_objective(&1, expr))
+    update_builder(fn builder ->
+      if builder.sense != :maximize do
+        raise ArgumentError, "called maximize/1 inside a :minimize model — use minimize/1"
+      end
+
+      ExPulp.DSL.Builder.set_objective(builder, expr)
+    end)
   end
 
   @doc """

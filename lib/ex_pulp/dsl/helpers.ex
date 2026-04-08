@@ -25,6 +25,9 @@ defmodule ExPulp.DSL.Helpers do
   the assignment target — `x = var(low: 0)` creates a variable named `"x"`.
   When called directly, the name must be provided as the first argument.
 
+  Auto-naming only works for top-level assignments in the model block.
+  Inside `for` loops, `if` blocks, or function calls, provide an explicit name.
+
   ## Options
     * `:low` - lower bound (default: `nil`, unbounded)
     * `:high` - upper bound (default: `nil`, unbounded)

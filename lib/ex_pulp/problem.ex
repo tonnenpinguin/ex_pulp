@@ -206,7 +206,7 @@ defmodule ExPulp.Problem do
   """
   @spec mip?(t()) :: boolean()
   def mip?(%__MODULE__{} = problem) do
-    Enum.any?(Map.values(problem.variables), fn v -> v.category == :integer end)
+    Enum.any?(Map.values(problem.variables), fn v -> v.category != :continuous end)
   end
 
   @doc "Returns true if the objective contains quadratic terms."
@@ -372,12 +372,24 @@ defmodule ExPulp.Problem do
   defp collect_variable_names(nil), do: []
 
   defp collect_variable_names(%Expression{} = expr) do
-    Enum.map(expr.terms, fn {%Variable{name: name}, _} -> name end)
+    linear = Enum.map(expr.terms, fn {%Variable{name: name}, _} -> name end)
+
+    quad =
+      Enum.flat_map(expr.quad_terms, fn {{%Variable{name: na}, %Variable{name: nb}}, _} ->
+        [na, nb]
+      end)
+
+    Enum.uniq(linear ++ quad)
   end
 
   defp register_expression_variables(problem, %Expression{} = expr) do
-    Enum.reduce(expr.terms, problem, fn {%Variable{} = var, _coeff}, prob ->
-      add_variable(prob, var)
+    problem =
+      Enum.reduce(expr.terms, problem, fn {%Variable{} = var, _coeff}, prob ->
+        add_variable(prob, var)
+      end)
+
+    Enum.reduce(expr.quad_terms, problem, fn {{%Variable{} = va, %Variable{} = vb}, _}, prob ->
+      prob |> add_variable(va) |> add_variable(vb)
     end)
   end
 end

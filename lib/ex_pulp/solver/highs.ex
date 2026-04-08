@@ -36,6 +36,7 @@ defmodule ExPulp.Solver.HiGHS do
   @behaviour ExPulp.Solver
 
   alias ExPulp.{Problem, Result, LpFormat}
+  alias ExPulp.Solver.Util
 
   @default_path "highs"
 
@@ -231,7 +232,7 @@ defmodule ExPulp.Solver.HiGHS do
     # Find "Objective <value>" line
     Enum.find_value(lines, nil, fn line ->
       case String.split(line) do
-        ["Objective", val] -> parse_float(val)
+        ["Objective", val] -> Util.parse_float(val)
         _ -> nil
       end
     end)
@@ -260,7 +261,7 @@ defmodule ExPulp.Solver.HiGHS do
                 case String.split(line) do
                   [name, val] when is_binary(name) ->
                     if MapSet.member?(variable_names, name) do
-                      {:reading_columns, Map.put(acc, name, parse_float(val))}
+                      {:reading_columns, Map.put(acc, name, Util.parse_float(val))}
                     else
                       {:reading_columns, acc}
                     end
@@ -275,32 +276,8 @@ defmodule ExPulp.Solver.HiGHS do
         end
       end)
 
-    # Round integer variables
-    Enum.reduce(problem.variables, values, fn {name, var}, acc ->
-      if var.category == :integer do
-        case Map.fetch(acc, name) do
-          {:ok, val} ->
-            rounded = round(val)
-            Map.put(acc, name, if(abs(val - rounded) < 1.0e-5, do: rounded / 1, else: val))
-
-          :error ->
-            acc
-        end
-      else
-        acc
-      end
-    end)
+    Util.round_integer_variables(values, problem.variables)
   end
 
-  defp parse_float(str) do
-    case Float.parse(str) do
-      {val, _} -> val
-      :error -> 0.0
-    end
-  end
-
-  defp tmp_prefix do
-    random = :crypto.strong_rand_bytes(8) |> Base.url_encode64(padding: false)
-    Path.join(System.tmp_dir!(), "expulp_highs_#{random}")
-  end
+  defp tmp_prefix, do: Util.tmp_prefix("highs")
 end

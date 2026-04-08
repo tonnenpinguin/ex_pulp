@@ -33,6 +33,7 @@ defmodule ExPulp.Solver.CBC do
   @behaviour ExPulp.Solver
 
   alias ExPulp.{Problem, Result, LpFormat}
+  alias ExPulp.Solver.Util
 
   @default_path "cbc"
 
@@ -136,18 +137,7 @@ defmodule ExPulp.Solver.CBC do
       |> Enum.filter(fn {name, _val} -> MapSet.member?(variable_names, name) end)
       |> Map.new()
 
-    # Round integer variables
-    variables =
-      Enum.reduce(problem.variables, variables, fn {name, var}, acc ->
-        if var.category == :integer do
-          case Map.fetch(acc, name) do
-            {:ok, val} -> Map.put(acc, name, round_integer(val))
-            :error -> acc
-          end
-        else
-          acc
-        end
-      end)
+    variables = Util.round_integer_variables(variables, problem.variables)
 
     objective =
       if problem.objective && status == :optimal do
@@ -189,7 +179,7 @@ defmodule ExPulp.Solver.CBC do
 
   defp parse_objective_from_status(line) do
     case Regex.run(~r/objective value\s+(-?[\d.e+\-]+)/i, line) do
-      [_, value_str] -> parse_float(value_str)
+      [_, value_str] -> Util.parse_float(value_str)
       _ -> nil
     end
   end
@@ -204,30 +194,10 @@ defmodule ExPulp.Solver.CBC do
       end
 
     case parts do
-      [_index, name, value | _rest] -> {name, parse_float(value)}
+      [_index, name, value | _rest] -> {name, Util.parse_float(value)}
       _ -> {"", 0.0}
     end
   end
 
-  defp parse_float(str) do
-    case Float.parse(str) do
-      {val, _} -> val
-      :error -> 0.0
-    end
-  end
-
-  defp round_integer(val) do
-    rounded = round(val)
-
-    if abs(val - rounded) < 1.0e-5 do
-      rounded / 1
-    else
-      val
-    end
-  end
-
-  defp tmp_prefix do
-    random = :crypto.strong_rand_bytes(8) |> Base.url_encode64(padding: false)
-    Path.join(System.tmp_dir!(), "expulp_#{random}")
-  end
+  defp tmp_prefix, do: Util.tmp_prefix("cbc")
 end
