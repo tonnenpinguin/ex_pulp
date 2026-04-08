@@ -67,6 +67,13 @@ jobs:
           git tag "v${{ inputs.version }}"
           git push origin "v${{ inputs.version }}"
 
+      - name: Generate changelog
+        if: ${{ !inputs.dry_run }}
+        uses: orhun/git-cliff-action@v4
+        id: changelog
+        with:
+          args: --latest --strip header
+
       - name: Create GitHub Release
         if: ${{ !inputs.dry_run }}
         env:
@@ -74,4 +81,4 @@ jobs:
         run: |
           gh release create "v${{ inputs.version }}" \
             --title "v${{ inputs.version }}" \
-            --generate-notes
+            --notes "${{ steps.changelog.outputs.content }}"
