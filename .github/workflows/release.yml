@@ -1,3 +1,4 @@
+run-name: "Release v${{ inputs.version }}${{ inputs.dry_run && ' (dry run)' || '' }}"
 name: Release
 
 on:
