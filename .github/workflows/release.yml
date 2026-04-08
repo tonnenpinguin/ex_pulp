@@ -34,9 +34,7 @@ jobs:
         run: mix compile --warnings-as-errors
 
       - name: Install solvers
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq coinor-cbc highs
+        uses: ./.github/actions/setup-solvers
 
       - name: Run tests
         run: mix test

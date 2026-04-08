@@ -1,0 +1,22 @@
+name: Setup LP Solvers
+description: Install CBC and HiGHS solvers
+
+inputs:
+  highs-version:
+    description: HiGHS release version
+    default: "1.14.0"
+
+runs:
+  using: composite
+  steps:
+    - name: Install CBC
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq coinor-cbc
+
+    - name: Install HiGHS
+      shell: bash
+      run: |
+        curl -sL "https://github.com/ERGO-Code/HiGHS/releases/download/v${{ inputs.highs-version }}/highs-${{ inputs.highs-version }}-x86_64-linux-gnu-static-mit.tar.gz" | tar xz
+        sudo install "highs-${{ inputs.highs-version }}-x86_64-linux-gnu-static-mit/bin/highs" /usr/local/bin/
