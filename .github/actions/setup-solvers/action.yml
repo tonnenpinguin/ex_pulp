@@ -19,4 +19,4 @@ runs:
       shell: bash
       run: |
         curl -sL "https://github.com/ERGO-Code/HiGHS/releases/download/v${{ inputs.highs-version }}/highs-${{ inputs.highs-version }}-x86_64-linux-gnu-static-mit.tar.gz" | tar xz
-        sudo install "highs-${{ inputs.highs-version }}-x86_64-linux-gnu-static-mit/bin/highs" /usr/local/bin/
+        sudo install bin/highs /usr/local/bin/
