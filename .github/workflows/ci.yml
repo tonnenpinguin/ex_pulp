@@ -5,6 +5,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 # Require approval for first-time contributors and external forks
 # Configure at: Settings > Actions > General > "Require approval for all outside collaborators"
 
