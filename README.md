@@ -1,5 +1,8 @@
 # ExPulp
 
+[![Hex.pm](https://img.shields.io/hexpm/v/ex_pulp.svg)](https://hex.pm/packages/ex_pulp)
+[![HexDocs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/ex_pulp)
+
 Linear and mixed-integer programming for Elixir, inspired by
 Python's [PuLP](https://github.com/coin-or/PuLP).
 

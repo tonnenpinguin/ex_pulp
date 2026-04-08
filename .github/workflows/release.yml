@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.2.0)"
+        required: true
+        type: string
+      dry_run:
+        description: "Dry run (skip hex publish and GitHub release)"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Test, tag & publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18"
+          otp-version: "28"
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
+      - name: Install solvers
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq coinor-cbc highs
+
+      - name: Run tests
+        run: mix test
+
+      - name: Verify version in mix.exs matches input
+        run: |
+          MIX_VERSION=$(grep '@version "' mix.exs | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ "$MIX_VERSION" != "${{ inputs.version }}" ]; then
+            echo "::error::mix.exs has version $MIX_VERSION but release input is ${{ inputs.version }}"
+            echo "Update @version in mix.exs before releasing."
+            exit 1
+          fi
+
+      - name: Build docs
+        run: mix docs
+
+      - name: Publish to Hex
+        if: ${{ !inputs.dry_run }}
+        run: mix hex.publish --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+
+      - name: Create Git tag
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --generate-notes
