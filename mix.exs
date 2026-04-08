@@ -55,7 +55,8 @@ defmodule ExPulp.MixProject do
         ],
         Solvers: [
           ExPulp.Solver,
-          ExPulp.Solver.CBC
+          ExPulp.Solver.CBC,
+          ExPulp.Solver.HiGHS
         ],
         Serialization: [
           ExPulp.LpFormat

@@ -139,13 +139,23 @@ Result.get_variable(result, var_struct)     # get by variable struct
 Result.evaluate(result, expression)         # evaluate expression with solution values
 ```
 
-## Solver
+## Solvers
 
-Requires `cbc` on PATH (`brew install cbc` / `apt install coinor-cbc`).
+Two solvers are supported. At least one must be installed.
 
 ```elixir
-ExPulp.solve(problem)                              # default CBC
-ExPulp.solve(problem, time_limit: 60)              # with timeout
-ExPulp.solve(problem, keep_files: true)             # keep .lp and .sol files
-ExPulp.Solver.CBC.available?()                      # check if cbc is installed
+# HiGHS (default) — brew install highs / apt install highs
+ExPulp.solve(problem)
+ExPulp.Solver.HiGHS.available?()
+
+# CBC (fallback) — brew install cbc / apt install coinor-cbc
+ExPulp.solve(problem, solver: ExPulp.Solver.CBC)
+ExPulp.Solver.CBC.available?()
+
+# Common options (both solvers)
+ExPulp.solve(problem, time_limit: 60)
+ExPulp.solve(problem, keep_files: true)
+
+# HiGHS-specific options
+ExPulp.solve(problem, threads: 4, gap_rel: 0.01)
 ```

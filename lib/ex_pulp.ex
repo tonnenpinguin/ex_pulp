@@ -104,7 +104,7 @@ defmodule ExPulp do
   Solves a problem using the specified solver (default: CBC).
 
   ## Options
-    * `:solver` - solver module (default: `ExPulp.Solver.CBC`)
+    * `:solver` - solver module (default: `ExPulp.Solver.HiGHS`)
     * `:time_limit` - max time in seconds
     * `:keep_files` - if true, temp files are not deleted
 
@@ -114,7 +114,7 @@ defmodule ExPulp do
   def solve(%Problem{} = problem, opts \\ []) do
     case Problem.validate(problem) do
       {:ok, _} ->
-        solver = Keyword.get(opts, :solver, ExPulp.Solver.CBC)
+        solver = Keyword.get(opts, :solver, ExPulp.Solver.HiGHS)
         solver.solve(problem, opts)
 
       {:error, reasons} ->
