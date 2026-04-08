@@ -8,22 +8,23 @@ defmodule ExPulp.DynamicModelTest do
     items = [1, 2, 3]
     capacities = %{1 => 10.0, 2 => 20.0, 3 => 30.0}
 
-    problem = ExPulp.model "dynamic", :minimize do
-      vars =
-        for i <- items, into: %{} do
-          {i, var("x_#{i}", low: 0)}
+    problem =
+      ExPulp.model "dynamic", :minimize do
+        vars =
+          for i <- items, into: %{} do
+            {i, var("x_#{i}", low: 0)}
+          end
+
+        minimize lp_sum(for i <- items, do: vars[i])
+
+        for i <- items do
+          subject_to "cap_#{i}", vars[i] <= capacities[i]
         end
 
-      minimize lp_sum(for i <- items, do: vars[i])
-
-      for i <- items do
-        subject_to "cap_#{i}", vars[i] <= capacities[i]
+        for i <- items do
+          subject_to vars[i] >= 1
+        end
       end
-
-      for i <- items do
-        subject_to vars[i] >= 1
-      end
-    end
 
     assert ExPulp.Problem.num_constraints(problem) == 6
 
@@ -34,24 +35,25 @@ defmodule ExPulp.DynamicModelTest do
 
   @tag :solver
   test "nested if inside for with subject_to" do
-    problem = ExPulp.model "conditional", :minimize do
-      items = [1, 2, 3, 4, 5]
+    problem =
+      ExPulp.model "conditional", :minimize do
+        items = [1, 2, 3, 4, 5]
 
-      vars =
-        for i <- items, into: %{} do
-          {i, var("x_#{i}", low: 0)}
-        end
+        vars =
+          for i <- items, into: %{} do
+            {i, var("x_#{i}", low: 0)}
+          end
 
-      minimize lp_sum(for i <- items, do: vars[i])
+        minimize lp_sum(for i <- items, do: vars[i])
 
-      for i <- items do
-        if rem(i, 2) == 0 do
-          subject_to "even_#{i}", vars[i] >= 10
-        else
-          subject_to "odd_#{i}", vars[i] >= 1
+        for i <- items do
+          if rem(i, 2) == 0 do
+            subject_to "even_#{i}", vars[i] >= 10
+          else
+            subject_to "odd_#{i}", vars[i] >= 1
+          end
         end
       end
-    end
 
     {:ok, result} = ExPulp.solve(problem)
     assert ExPulp.Result.optimal?(result)
@@ -62,16 +64,17 @@ defmodule ExPulp.DynamicModelTest do
 
   @tag :solver
   test "add_to_objective builds objective incrementally" do
-    problem = ExPulp.model "incremental", :minimize do
-      x = var(low: 0, high: 10)
-      y = var(low: 0, high: 10)
+    problem =
+      ExPulp.model "incremental", :minimize do
+        x = var(low: 0, high: 10)
+        y = var(low: 0, high: 10)
 
-      # Build objective across multiple add_to_objective calls
-      add_to_objective 2 * x
-      add_to_objective 3 * y
+        # Build objective across multiple add_to_objective calls
+        add_to_objective 2 * x
+        add_to_objective 3 * y
 
-      subject_to "lb", x + y >= 5
-    end
+        subject_to "lb", x + y >= 5
+      end
 
     {:ok, result} = ExPulp.solve(problem)
     assert ExPulp.Result.optimal?(result)
@@ -84,14 +87,15 @@ defmodule ExPulp.DynamicModelTest do
   test "add_to_objective from for loops" do
     costs = %{1 => 1.0, 2 => 5.0, 3 => 10.0}
 
-    problem = ExPulp.model "loop_obj", :minimize do
-      vars = lp_vars("x", 1..3, low: 0)
+    problem =
+      ExPulp.model "loop_obj", :minimize do
+        vars = lp_vars("x", 1..3, low: 0)
 
-      for i <- 1..3 do
-        add_to_objective costs[i] * vars[i]
-        subject_to vars[i] >= 1
+        for i <- 1..3 do
+          add_to_objective costs[i] * vars[i]
+          subject_to vars[i] >= 1
+        end
       end
-    end
 
     {:ok, result} = ExPulp.solve(problem)
     assert ExPulp.Result.optimal?(result)
@@ -101,13 +105,14 @@ defmodule ExPulp.DynamicModelTest do
 
   @tag :solver
   test "Result.evaluate with expression" do
-    problem = ExPulp.model "eval", :minimize do
-      x = var(low: 0, high: 10)
-      y = var(low: 0, high: 10)
+    problem =
+      ExPulp.model "eval", :minimize do
+        x = var(low: 0, high: 10)
+        y = var(low: 0, high: 10)
 
-      minimize x + y
-      subject_to x + y >= 5
-    end
+        minimize x + y
+        subject_to x + y >= 5
+      end
 
     {:ok, result} = ExPulp.solve(problem)
 
@@ -132,53 +137,54 @@ defmodule ExPulp.DynamicModelTest do
     prices = %{1 => 10.0, 2 => 20.0, 3 => 15.0}
     slot_hours = 0.25
 
-    problem = ExPulp.model "ev_mini", :minimize do
-      # Decision variables
-      power =
-        for cp <- chargepoints, s <- slots, into: %{} do
-          {{cp, s}, var("p_#{cp}_#{s}", low: 0)}
-        end
-
-      on =
-        for cp <- chargepoints, s <- slots, into: %{} do
-          {{cp, s}, var("on_#{cp}_#{s}", category: :binary)}
-        end
-
-      shortfall =
-        for cp <- chargepoints, into: %{} do
-          {cp, var("sf_#{cp}", low: 0)}
-        end
-
-      # Objective: minimize electricity cost + shortfall penalty
-      cost =
-        lp_sum(
-          for cp <- chargepoints, s <- slots do
-            prices[s] * slot_hours * power[{cp, s}]
+    problem =
+      ExPulp.model "ev_mini", :minimize do
+        # Decision variables
+        power =
+          for cp <- chargepoints, s <- slots, into: %{} do
+            {{cp, s}, var("p_#{cp}_#{s}", low: 0)}
           end
-        )
 
-      penalty = lp_sum(for {_cp, sf} <- shortfall, do: 500.0 * sf)
+        on =
+          for cp <- chargepoints, s <- slots, into: %{} do
+            {{cp, s}, var("on_#{cp}_#{s}", category: :binary)}
+          end
 
-      minimize cost + penalty
+        shortfall =
+          for cp <- chargepoints, into: %{} do
+            {cp, var("sf_#{cp}", low: 0)}
+          end
 
-      # Big-M constraints: power linked to on/off
-      for cp <- chargepoints, s <- slots do
-        subject_to power[{cp, s}] >= min_power * on[{cp, s}]
-        subject_to power[{cp, s}] <= max_power * on[{cp, s}]
+        # Objective: minimize electricity cost + shortfall penalty
+        cost =
+          lp_sum(
+            for cp <- chargepoints, s <- slots do
+              prices[s] * slot_hours * power[{cp, s}]
+            end
+          )
+
+        penalty = lp_sum(for {_cp, sf} <- shortfall, do: 500.0 * sf)
+
+        minimize cost + penalty
+
+        # Big-M constraints: power linked to on/off
+        for cp <- chargepoints, s <- slots do
+          subject_to power[{cp, s}] >= min_power * on[{cp, s}]
+          subject_to power[{cp, s}] <= max_power * on[{cp, s}]
+        end
+
+        # Energy delivery
+        for cp <- chargepoints do
+          energy = lp_sum(for s <- slots, do: slot_hours * power[{cp, s}])
+          subject_to energy + shortfall[cp] >= target_kwh[cp]
+        end
+
+        # Pool power limit per slot
+        for s <- slots do
+          pool = lp_sum(for cp <- chargepoints, do: power[{cp, s}])
+          subject_to pool <= pool_max
+        end
       end
-
-      # Energy delivery
-      for cp <- chargepoints do
-        energy = lp_sum(for s <- slots, do: slot_hours * power[{cp, s}])
-        subject_to energy + shortfall[cp] >= target_kwh[cp]
-      end
-
-      # Pool power limit per slot
-      for s <- slots do
-        pool = lp_sum(for cp <- chargepoints, do: power[{cp, s}])
-        subject_to pool <= pool_max
-      end
-    end
 
     {:ok, result} = ExPulp.solve(problem)
     assert ExPulp.Result.optimal?(result)

@@ -78,29 +78,29 @@ defmodule ExPulp.DSL do
 
     quote do
       (fn ->
-        import Kernel,
-          except: [+: 2, -: 2, *: 2, /: 2, >=: 2, <=: 2, ==: 2, -: 1]
+         import Kernel,
+           except: [+: 2, -: 2, *: 2, /: 2, >=: 2, <=: 2, ==: 2, -: 1]
 
-        import ExPulp.DSL.Operators
-        import ExPulp.DSL.Helpers
+         import ExPulp.DSL.Operators
+         import ExPulp.DSL.Helpers
 
-        import ExPulp.DSL,
-          only: [
-            minimize: 1,
-            maximize: 1,
-            subject_to: 1,
-            subject_to: 2,
-            for_each: 2,
-            for_each: 3,
-            add_to_objective: 1
-          ]
+         import ExPulp.DSL,
+           only: [
+             minimize: 1,
+             maximize: 1,
+             subject_to: 1,
+             subject_to: 2,
+             for_each: 2,
+             for_each: 3,
+             add_to_objective: 1
+           ]
 
-        ExPulp.DSL.init_builder(unquote(name), unquote(sense))
+         ExPulp.DSL.init_builder(unquote(name), unquote(sense))
 
-        expulp_last_expr = unquote(transformed)
+         expulp_last_expr = unquote(transformed)
 
-        ExPulp.DSL.finish_builder(expulp_last_expr)
-      end).()
+         ExPulp.DSL.finish_builder(expulp_last_expr)
+       end).()
     end
   end
 

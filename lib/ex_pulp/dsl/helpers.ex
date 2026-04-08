@@ -86,7 +86,8 @@ defmodule ExPulp.DSL.Helpers do
           %{any() => Variable.t()}
   def lp_vars(prefix, indices, opts \\ [])
 
-  def lp_vars(prefix, [first | _] = indices, opts) when is_list(first) or is_struct(first, Range) do
+  def lp_vars(prefix, [first | _] = indices, opts)
+      when is_list(first) or is_struct(first, Range) do
     clean_opts = Keyword.delete(opts, :name)
 
     indices

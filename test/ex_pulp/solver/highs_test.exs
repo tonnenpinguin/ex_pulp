@@ -95,13 +95,14 @@ defmodule ExPulp.Solver.HiGHSTest do
   test "DSL integration via solver option" do
     require ExPulp
 
-    problem = ExPulp.model "highs_dsl", :minimize do
-      x = var(low: 0, high: 10)
-      y = var(low: 0, high: 10)
+    problem =
+      ExPulp.model "highs_dsl", :minimize do
+        x = var(low: 0, high: 10)
+        y = var(low: 0, high: 10)
 
-      minimize 2 * x + 3 * y
-      subject_to "demand", x + y >= 5
-    end
+        minimize 2 * x + 3 * y
+        subject_to "demand", x + y >= 5
+      end
 
     {:ok, result} = ExPulp.solve(problem, solver: ExPulp.Solver.HiGHS)
     assert result.status == :optimal
@@ -116,12 +117,13 @@ defmodule ExPulp.Solver.HiGHSTest do
     weight = %{gold: 10, silver: 5, bronze: 4, diamond: 1, pearl: 3}
     value = %{gold: 60, silver: 50, bronze: 40, diamond: 30, pearl: 20}
 
-    problem = ExPulp.model "knapsack_highs", :maximize do
-      take = lp_binary_vars("take", items)
+    problem =
+      ExPulp.model "knapsack_highs", :maximize do
+        take = lp_binary_vars("take", items)
 
-      maximize lp_weighted_sum(value, take)
-      subject_to "capacity", lp_weighted_sum(weight, take) <= 15
-    end
+        maximize lp_weighted_sum(value, take)
+        subject_to "capacity", lp_weighted_sum(weight, take) <= 15
+      end
 
     {:ok, result} = ExPulp.solve(problem, solver: ExPulp.Solver.HiGHS)
     assert result.status == :optimal

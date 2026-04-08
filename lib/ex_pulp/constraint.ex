@@ -119,7 +119,11 @@ defmodule ExPulp.Constraint do
         :eq -> :eq
       end
 
-    %__MODULE__{expression: Expression.negate(Expression.wrap(right)), sense: flipped, rhs: Kernel.-(left) / 1}
+    %__MODULE__{
+      expression: Expression.negate(Expression.wrap(right)),
+      sense: flipped,
+      rhs: Kernel.-(left) / 1
+    }
   end
 
   defp make_constraint(left, sense, right) do

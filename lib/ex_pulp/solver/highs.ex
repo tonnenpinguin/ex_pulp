@@ -139,10 +139,11 @@ defmodule ExPulp.Solver.HiGHS do
         _ -> []
       end
 
-    model_line = Enum.find(lines, fn
-      ["Model", "status" | _] -> true
-      _ -> false
-    end)
+    model_line =
+      Enum.find(lines, fn
+        ["Model", "status" | _] -> true
+        _ -> false
+      end)
 
     model_status =
       case model_line do
@@ -150,10 +151,11 @@ defmodule ExPulp.Solver.HiGHS do
         _ -> nil
       end
 
-    sol_line = Enum.find(lines, fn
-      ["Solution", "status" | _] -> true
-      _ -> false
-    end)
+    sol_line =
+      Enum.find(lines, fn
+        ["Solution", "status" | _] -> true
+        _ -> false
+      end)
 
     sol_status =
       case sol_line do
@@ -162,10 +164,11 @@ defmodule ExPulp.Solver.HiGHS do
       end
 
     # Also check for MIP status lines like "Status            Optimal"
-    status_line = Enum.find(lines, fn
-      ["Status" | _rest] -> true
-      _ -> false
-    end)
+    status_line =
+      Enum.find(lines, fn
+        ["Status" | _rest] -> true
+        _ -> false
+      end)
 
     mip_status =
       case status_line do
